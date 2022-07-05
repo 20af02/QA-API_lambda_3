@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en" dir="ltr">
+
+
+<head>
+    <meta charset='utf-8'>
+    <meta name="referrer" content="no-referrer" />
+
+    <Title>Ask A Question</Title>
+    <script>
+
+        function valid_json(str) {
+            return str.replace(/\\n/g, "\\n").replace(/\\'/g, "\\'").replace(/\\"/g, '\\"').replace(/\\&/g, "\\&").replace(/\\r/g, "\\r").replace(/\\t/g, "\\t").replace(/\\b/g, "\\b").replace(/\\f/g, "\\f").replace(/[\u0000-\u001F]+/g, "").replace('\'', '').replace('[', '').replace(']', '')
+        }
+        function prevent_XSS(str) {
+            return String(str).replace(/[^\w. ]/gi, function (c) { return '&#' + c.charCodeAt(0) + ';'; });
+        }
+        function postLambda() {
+            var xhttp = new XMLHttpRequest();
+            let url = new URL('https://81z09mxa3a.execute-api.us-east-1.amazonaws.com/2/questions');
+            const params = {
+                posts: document.getElementById("q_post").value
+            }
+
+
+
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    document.getElementById("question_submit_response").innerHTML = xhttp.responseText;
+                }
+            };
+
+
+
+            xhttp.open("POST", url, true);
+
+            xhttp.send(JSON.stringify(params));
+        }
+        function getLambda() {
+            var xhttp = new XMLHttpRequest();
+            let url = new URL('https://81z09mxa3a.execute-api.us-east-1.amazonaws.com/2/answers');
+            url.searchParams.set('q', prevent_XSS(document.getElementById("q").value));
+
+
+            xhttp.onreadystatechange = function () {
+                if (xhttp.readyState == 4 && xhttp.status == 200) {
+                    var respObj = JSON.parse(xhttp.responseText);
+
+
+                    document.getElementById("find_answer_response_1_date").innerHTML = "Date: " + Object.values(JSON.parse(xhttp.response))[0][0];
+
+                    document.getElementById("find_answer_response_1_post").innerHTML = "Post: " + valid_json(Object.values(JSON.parse(xhttp.response))[0][1]);
+
+                    document.getElementById("find_answer_response_2_date").innerHTML = "Date: " + Object.values(JSON.parse(xhttp.response))[1][0];
+
+                    document.getElementById("find_answer_response_2_post").innerHTML = "Post: " + valid_json(Object.values(JSON.parse(xhttp.response))[1][1]);
+
+                    document.getElementById("find_answer_response_3_date").innerHTML = "Date: " + Object.values(JSON.parse(xhttp.response))[2][0];
+
+                    document.getElementById("find_answer_response_3_post").innerHTML = "Post: " + valid_json(Object.values(JSON.parse(xhttp.response))[2][1]);
+
+                }
+                if (xhttp.readyState == 4 && xhttp.status == 404) {
+                    document.getElementById("find_answer_response_1_post").innerHTML = "no answers found for this category";
+                }
+            }
+
+            xhttp.open("GET", url, true);
+            xhttp.setRequestHeader('accept', 'application/json');
+            xhttp.send();
+        }
+    </script>
+
+</head>
+
+<body>
+
+    <div class="content" id="question_form">
+        <h1>Ask here</h1>
+        <p>Type your question in the textbox below.</p>
+        <form>
+            <textarea name="q_post" id="q_post" cols="80" rows="10" placeholder="Question Body"></textarea>
+            <p />
+            <p />
+        </form>
+        <button onclick="postLambda(event);">Post Question</button>
+        {% if error %}
+        <p class="error">{{error}}</p>
+        {% endif %}
+        <h1><span>Server Response: </span></h1>
+        <h2><span id="question_submit_response">None</span></h2>
+    </div>
+    <div class="content" id="answer_form">
+        <h1>Find Answer here</h1>
+        <p>Type your question in the textbox below.</p>
+        <form onsubmit="getLambda(event); false">
+            <textarea name="q" id="q" cols="80" rows="10" placeholder="Question Body" id="answer_body"></textarea>
+            <p />
+        </form>
+        <button onclick="getLambda(event);">Find Answers</button>
+        {% if error %}
+        <p class="error">{{error}}</p>
+        {% endif %}
+        <h1><span>Server Response: </span></h1>
+        <h2><span>3 Answers</span></h2>
+        <h2><span id="find_answer_response_1_date"></span></h2>
+        <h2><span id="find_answer_response_1_post"></span></h2>
+        <h2><span id="find_answer_response_2_date"></span></h2>
+        <h2><span id="find_answer_response_2_post"></span></h2>
+        <h2><span id="find_answer_response_3_date"></span></h2>
+        <h2><span id="find_answer_response_3_post"></span></h2>
+    </div>
+
+
+</body>
+
+</html>
